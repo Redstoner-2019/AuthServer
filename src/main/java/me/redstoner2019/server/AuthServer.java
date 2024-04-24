@@ -13,7 +13,6 @@ import org.json.JSONObject;
 import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
-import java.util.Iterator;
 
 public class AuthServer extends ODServer {
     public static HashMap<String, Token> tokens = new HashMap<>();
@@ -36,11 +35,6 @@ public class AuthServer extends ODServer {
         }
         userdata = new JSONObject(Util.readFile(userdataFile));
 
-        Token token = Token.createToken("Lukas");
-        tokens.put(token.getToken(), token);
-        usernameTokens.put(token.getUsername(),token);
-
-        System.out.println(token.getToken());
         setup(8009, ConnectionProtocol.UDP);
 
         Thread t = new Thread(new Runnable() {
@@ -74,39 +68,72 @@ public class AuthServer extends ODServer {
                                 case "client":{
                                     switch (data.getString("request")){
                                         case "token-info":{
+                                            System.out.println(tokens);
+                                            if(!tokens.containsKey(data.getString("token"))){
+                                                JSONObject result = new JSONObject();
+                                                result.put("header","token-info");
+                                                result.put("available","false");
+                                                clientHandler.sendObject(new JSONPacket(result.toString()));
+                                                break;
+                                            }
+                                            Token token = tokens.get(data.getString("token"));
+                                            String username = token.getUsername();
+                                            JSONObject user = userdata.getJSONObject(username);
+                                            user.put("header","token-info");
+                                            user.put("available","true");
+                                            user.remove("password");
+                                            user.put("username",username);
+                                            clientHandler.sendObject(new JSONPacket(user.toString()));
                                             break;
                                         }
                                         case "account-info":{
+                                            String username = data.getString("username");
+                                            if(!userdata.has(data.getString("username"))){
+                                                JSONObject result = new JSONObject();
+                                                result.put("header","account-info");
+                                                result.put("available","false");
+                                                clientHandler.sendObject(new JSONPacket(result.toString()));
+                                                break;
+                                            }
+                                            JSONObject user = userdata.getJSONObject(username);
+                                            user.put("header","account-info");
+                                            user.put("available","false");
+                                            user.remove("password");
+                                            user.put("username",username);
+                                            clientHandler.sendObject(new JSONPacket(user.toString()));
                                             break;
                                         }
                                         case "login": {
-                                            Util.log("login");
                                             String username = data.getString("username");
                                             String password = data.getString("password");
 
                                             JSONObject response = new JSONObject();
-                                            if(userdata.has(username)){
-                                                JSONObject user = userdata.getJSONObject(username);
-                                                if(user.getString("password").equals(password)){
-                                                    response.put("header","login-complete");
-                                                    if(!usernameTokens.containsKey(username)){
-                                                        Token token = Token.createToken(username);
-                                                        tokens.put(token.getToken(), token);
-                                                        usernameTokens.put(token.getUsername(),token);
+                                            try{
+                                                if(userdata.has(username)){
+                                                    JSONObject user = userdata.getJSONObject(username);
+                                                    if(user.getString("password").equals(password)){
+                                                        response.put("header","login-complete");
+                                                        if(!usernameTokens.containsKey(username)){
+                                                            Token token = Token.createToken(username);
+                                                            tokens.put(token.getToken(), token);
+                                                            usernameTokens.put(token.getUsername(),token);
+                                                        }
+                                                        response.put("token",usernameTokens.get(username).getToken());
+                                                    } else {
+                                                        response.put("header","invalid-password");
                                                     }
-                                                    response.put("token",usernameTokens.get(username).getToken());
                                                 } else {
-                                                    response.put("header","invalid-password");
+                                                    response.put("header","invalid-username");
                                                 }
-                                            } else {
-                                                response.put("header","invalid-username");
+                                            }catch (Exception e){
+                                                response.put("header","login-incomplete");
                                             }
+
                                             clientHandler.sendObject(new JSONPacket(response.toString()));
                                             break;
                                         }
                                         case "create-account": {
                                             try{
-                                                Util.log("create accpimt");
                                                 String username = data.getString("username");
                                                 String displayname = data.getString("displayname");
                                                 String password = data.getString("password");
@@ -129,12 +156,28 @@ public class AuthServer extends ODServer {
                                             break;
                                         }
                                         case "delete-account":{
+                                            String username = data.getString("username");
+                                            userdata.remove(username);
+                                            JSONObject response = new JSONObject();
+                                            response.put("header","delete-account");
+                                            response.put("result","success");
+                                            clientHandler.sendObject(new JSONPacket(response.toString()));
                                             break;
                                         }
                                         case "change-password": {
+                                            String username = data.getString("username");
+                                            String password = data.getString("password");
+                                            JSONObject user = userdata.getJSONObject(username);
+                                            user.put("password",password);
+                                            userdata.put(username,user);
                                             break;
                                         }
                                         case "change-displayname": {
+                                            String username = data.getString("username");
+                                            String displayname = data.getString("displayname");
+                                            JSONObject user = userdata.getJSONObject(username);
+                                            user.put("displayname",displayname);
+                                            userdata.put(username,user);
                                             break;
                                         }
                                     }
@@ -143,7 +186,39 @@ public class AuthServer extends ODServer {
                                 case "server":{
                                     switch (data.getString("request")){
                                         case "token-info":{
-
+                                            if(!tokens.containsKey(data.getString("token"))){
+                                                JSONObject result = new JSONObject();
+                                                result.put("header","token-info");
+                                                result.put("available","false");
+                                                clientHandler.sendObject(new JSONPacket(result.toString()));
+                                                break;
+                                            }
+                                            Token token = tokens.get(data.getString("token"));
+                                            String username = token.getUsername();
+                                            JSONObject user = userdata.getJSONObject(username);
+                                            user.put("header","token-info");
+                                            user.put("available","true");
+                                            user.remove("password");
+                                            user.put("username",username);
+                                            clientHandler.sendObject(new JSONPacket(user.toString()));
+                                            break;
+                                        }
+                                        case "account-info":{
+                                            String username = data.getString("username");
+                                            if(!userdata.has(data.getString("username"))){
+                                                JSONObject result = new JSONObject();
+                                                result.put("header","account-info");
+                                                result.put("available","false");
+                                                clientHandler.sendObject(new JSONPacket(result.toString()));
+                                                break;
+                                            }
+                                            JSONObject user = userdata.getJSONObject(username);
+                                            user.put("header","account-info");
+                                            user.put("available","false");
+                                            user.remove("password");
+                                            user.put("username",username);
+                                            clientHandler.sendObject(new JSONPacket(user.toString()));
+                                            break;
                                         }
                                     }
                                     break;

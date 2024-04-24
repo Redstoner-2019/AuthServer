@@ -72,8 +72,6 @@ public class Token {
         Calendar calendar = Calendar.getInstance();
 
         int seed = Integer.valueOf(calendar.get(Calendar.DAY_OF_MONTH) + "" + calendar.get(Calendar.MONTH) + calendar.get(Calendar.YEAR));
-        System.out.println(seed);
-        System.out.println(password);
         Random random = new Random(seed);
         byte[] salt = new byte[16];
         random.nextBytes(salt);
