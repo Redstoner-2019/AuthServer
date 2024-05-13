@@ -54,7 +54,7 @@ public class Token {
         this.username = username;
         this.createStamp = createStamp;
         this.maxAge = maxAge;
-        Random random = new Random(69);
+        Random random = new Random((username + password).hashCode());
         UUID uuid = new UUID(random.nextLong(),random.nextLong());
         UUID uuid2 = new UUID(random.nextLong(),random.nextLong());
         UUID uuid3 = new UUID(random.nextLong(),random.nextLong());

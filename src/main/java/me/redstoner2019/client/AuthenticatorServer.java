@@ -1,10 +1,9 @@
 package me.redstoner2019.client;
 
-import me.redstoner2019.events.PacketListener;
-import me.redstoner2019.odclient.ODClient;
-import me.redstoner2019.packets.JSONPacket;
-import me.redstoner2019.util.ConnectionProtocol;
-import me.redstoner2019.util.Util;
+import me.redstoner2019.authserver.packets.JSONPacket;
+import me.redstoner2019.server.events.PacketListener;
+import me.redstoner2019.server.odclient.ODClient;
+import me.redstoner2019.server.util.ConnectionProtocol;
 import org.json.JSONObject;
 
 public class AuthenticatorServer extends ODClient {
@@ -15,10 +14,10 @@ public class AuthenticatorServer extends ODClient {
     private static final Object REF = new Object();
 
     public static void main(String[] args) {
-        setup();
+        new AuthenticatorServer().setup();
     }
 
-    public static void setup(){
+    public void setup(){
         setPacketListener(new PacketListener() {
             @Override
             public void packetRecievedEvent(Object o) {
@@ -34,7 +33,7 @@ public class AuthenticatorServer extends ODClient {
         startSender();
     }
 
-    public static JSONObject getTokenInfo(String token){
+    public JSONObject getTokenInfo(String token){
         JSONObject object = new JSONObject();
         object.put("header","server");
         object.put("request","token-info");
@@ -42,14 +41,14 @@ public class AuthenticatorServer extends ODClient {
         sendObject(new JSONPacket(object.toString()));
         try {
             synchronized (REF){
-                REF.wait();
+                REF.wait(5000);
             }
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
         return result;
     }
-    public static JSONObject getAccountInfo(String username){
+    public JSONObject getAccountInfo(String username){
         JSONObject object = new JSONObject();
         object.put("header","server");
         object.put("request","token-info");
@@ -57,7 +56,8 @@ public class AuthenticatorServer extends ODClient {
         sendObject(new JSONPacket(object.toString()));
         try {
             synchronized (REF){
-                REF.wait();
+                REF.wait(5000);
+
             }
         } catch (InterruptedException e) {
             throw new RuntimeException(e);

@@ -1,13 +1,13 @@
 package me.redstoner2019.server;
 
 import me.redstoner2019.data.Token;
-import me.redstoner2019.events.ClientConnectEvent;
-import me.redstoner2019.events.PacketListener;
-import me.redstoner2019.odserver.ClientHandler;
-import me.redstoner2019.odserver.ODServer;
-import me.redstoner2019.packets.JSONPacket;
-import me.redstoner2019.util.ConnectionProtocol;
-import me.redstoner2019.util.Util;
+import me.redstoner2019.authserver.packets.JSONPacket;
+import me.redstoner2019.server.events.ClientConnectEvent;
+import me.redstoner2019.server.events.PacketListener;
+import me.redstoner2019.server.odserver.ClientHandler;
+import me.redstoner2019.server.odserver.ODServer;
+import me.redstoner2019.server.util.ConnectionProtocol;
+import me.redstoner2019.server.util.Util;
 import org.json.JSONObject;
 
 import java.io.File;
@@ -63,6 +63,9 @@ public class AuthServer extends ODServer {
                     public void packetRecievedEvent(Object o) {
                         if(!(o instanceof JSONPacket)) return;
                         JSONObject data = new JSONObject(((JSONPacket) o).getJson());
+                        Util.log("Recieved:");
+                        Util.log("---------");
+                        Util.log(Util.prettyJSON(data.toString()));
                         if(data.has("header")){
                             switch (data.getString("header")){
                                 case "client":{
@@ -126,7 +129,10 @@ public class AuthServer extends ODServer {
                                                     response.put("header","invalid-username");
                                                 }
                                             }catch (Exception e){
+                                                System.out.println(e.getLocalizedMessage());
+                                                response.put("info",e.getLocalizedMessage());
                                                 response.put("header","login-incomplete");
+                                                e.printStackTrace();
                                             }
 
                                             clientHandler.sendObject(new JSONPacket(response.toString()));

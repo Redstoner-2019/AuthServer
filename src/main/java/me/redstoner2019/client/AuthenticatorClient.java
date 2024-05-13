@@ -1,11 +1,10 @@
 package me.redstoner2019.client;
 
 import me.redstoner2019.data.Token;
-import me.redstoner2019.events.PacketListener;
-import me.redstoner2019.odclient.ODClient;
-import me.redstoner2019.packets.JSONPacket;
-import me.redstoner2019.util.ConnectionProtocol;
-import me.redstoner2019.util.Util;
+import me.redstoner2019.authserver.packets.JSONPacket;
+import me.redstoner2019.server.events.PacketListener;
+import me.redstoner2019.server.odclient.ODClient;
+import me.redstoner2019.server.util.ConnectionProtocol;
 import org.json.JSONObject;
 
 import java.util.Scanner;
@@ -16,7 +15,16 @@ public class AuthenticatorClient extends ODClient {
     private static JSONObject result;
     private static final Object REF = new Object();
     public static void main(String[] args) {
-        setup();
+        AuthenticatorClient c = new AuthenticatorClient();
+        c.setup();
+        c.main();
+    }
+
+    public static String getVersion() {
+        return "";
+    }
+
+    public void main(){
         Scanner scanner = new Scanner(System.in);
         while (true){
             String arg = scanner.nextLine();
@@ -26,7 +34,7 @@ public class AuthenticatorClient extends ODClient {
                     String username = scanner.nextLine();
                     System.out.println("password?");
                     String password = scanner.nextLine();
-                    login(username,password);
+                    System.out.println(login(username,password));
                     break;
                 }
                 case "info":{
@@ -48,7 +56,7 @@ public class AuthenticatorClient extends ODClient {
             }
         }
     }
-    public static void setup(){
+    public void setup(){
         setPacketListener(new PacketListener() {
             @Override
             public void packetRecievedEvent(Object o) {
@@ -64,7 +72,7 @@ public class AuthenticatorClient extends ODClient {
         startSender();
     }
 
-    public static JSONObject getTokenInfo(String token){
+    public JSONObject getTokenInfo(String token){
         JSONObject object = new JSONObject();
         object.put("header","client");
         object.put("request","token-info");
@@ -72,14 +80,14 @@ public class AuthenticatorClient extends ODClient {
         sendObject(new JSONPacket(object.toString()));
         try {
             synchronized (REF){
-                REF.wait();
+                REF.wait(5000);
             }
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
         return result;
     }
-    public static JSONObject getAccountInfo(String username){
+    public JSONObject getAccountInfo(String username){
         JSONObject object = new JSONObject();
         object.put("header","client");
         object.put("request","token-info");
@@ -87,7 +95,7 @@ public class AuthenticatorClient extends ODClient {
         sendObject(new JSONPacket(object.toString()));
         try {
             synchronized (REF){
-                REF.wait();
+                REF.wait(5000);
             }
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
@@ -95,7 +103,7 @@ public class AuthenticatorClient extends ODClient {
         return result;
     }
 
-    public static void login(String username, String password){
+    public JSONObject login(String username, String password){
         JSONObject object = new JSONObject();
         object.put("header","client");
         object.put("request","login");
@@ -106,9 +114,17 @@ public class AuthenticatorClient extends ODClient {
             throw new RuntimeException(e);
         }
         sendObject(new JSONPacket(object.toString()));
+        try {
+            synchronized (REF){
+                REF.wait(5000);
+            }
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+        return result;
     }
 
-    public static void createAccount(String username,String displayname, String password){
+    public JSONObject createAccount(String username,String displayname, String password){
         JSONObject object = new JSONObject();
         object.put("header","client");
         object.put("request","create-account");
@@ -120,17 +136,9 @@ public class AuthenticatorClient extends ODClient {
             throw new RuntimeException(e);
         }
         sendObject(new JSONPacket(object.toString()));
-    }
-
-    public static JSONObject getUserInfo(String username){
-        JSONObject object = new JSONObject();
-        object.put("header","client");
-        object.put("request","account-info");
-        object.put("username",username);
-        sendObject(new JSONPacket(object.toString()));
         try {
             synchronized (REF){
-                REF.wait();
+                REF.wait(5000);
             }
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
@@ -138,7 +146,23 @@ public class AuthenticatorClient extends ODClient {
         return result;
     }
 
-    public static void deleteAccount(String username){
+    public JSONObject getUserInfo(String username){
+        JSONObject object = new JSONObject();
+        object.put("header","client");
+        object.put("request","account-info");
+        object.put("username",username);
+        sendObject(new JSONPacket(object.toString()));
+        try {
+            synchronized (REF){
+                REF.wait(5000);
+            }
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+        return result;
+    }
+
+    public void deleteAccount(String username){
         JSONObject object = new JSONObject();
         object.put("header","client");
         object.put("request","delete-account");
@@ -146,7 +170,7 @@ public class AuthenticatorClient extends ODClient {
         sendObject(new JSONPacket(object.toString()));
     }
 
-    public static void changePassword(String username, String password){
+    public void changePassword(String username, String password){
         JSONObject object = new JSONObject();
         object.put("header","client");
         object.put("request","delete-account");
@@ -154,7 +178,7 @@ public class AuthenticatorClient extends ODClient {
         object.put("password",password);
         sendObject(new JSONPacket(object.toString()));
     }
-    public static void changeDisplayname(String username, String displayname){
+    public void changeDisplayname(String username, String displayname){
         JSONObject object = new JSONObject();
         object.put("header","client");
         object.put("request","delete-account");
